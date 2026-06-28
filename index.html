@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CX-3 Flight Computer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&family=Playfair+Display:wght@700&display=swap');
+        
+        :root {
+            --lux-bg: #1a1a1a;
+            --lux-panel: #2c2c2c;
+            --lux-gold: #d4af37;
+            --lux-accent: #b8860b;
+            --lux-text: #f0e6c8;
+            --lux-screen: #0f1c0f;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto Mono', monospace;
+            background: linear-gradient(135deg, #0f0f0f, #2c1f0f);
+            color: var(--lux-text);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .calculator {
+            width: 380px;
+            background: var(--lux-panel);
+            border-radius: 24px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8),
+                        inset 0 4px 12px rgba(212, 175, 55, 0.3);
+            overflow: hidden;
+            border: 8px solid #333;
+        }
+        
+        .header {
+            background: linear-gradient(to right, #1f1f1f, #3a2a1a);
+            padding: 12px 20px;
+            text-align: center;
+            border-bottom: 3px solid var(--lux-gold);
+            position: relative;
+        }
+        
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.4rem;
+            letter-spacing: 3px;
+            color: var(--lux-gold);
+            text-shadow: 0 0 10px rgba(212, 175, 55, 0.6);
+        }
+        
+        .header .model {
+            font-size: 0.8rem;
+            color: #aaa;
+            letter-spacing: 2px;
+        }
+        
+        .screen-container {
+            background: #111;
+            padding: 15px;
+            position: relative;
+        }
+        
+        .screen {
+            background: var(--lux-screen);
+            height: 140px;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: inset 0 4px 15px rgba(0, 0, 0, 0.9),
+                        0 0 20px rgba(139, 69, 19, 0.4);
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #444;
+        }
+        
+        .display {
+            font-family: 'Roboto Mono', monospace;
+            font-size: 2.2rem;
+            text-align: right;
+            color: #aaffaa;
+            text-shadow: 0 0 8px #00ff00;
+            min-height: 60px;
+            word-break: break-all;
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #88cc88;
+            margin-bottom: 8px;
+        }
+        
+        .mode {
+            color: var(--lux-gold);
+            font-weight: 700;
+        }
+        
+        .keypad {
+            padding: 20px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            background: #1f1f1f;
+        }
+        
+        button {
+            height: 58px;
+            border-radius: 12px;
+            border: none;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.1s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6),
+                        inset 0 2px 4px rgba(255,255,255,0.1);
+        }
+        
+        button:active {
+            transform: translateY(2px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+        }
+        
+        .num {
+            background: #2a2a2a;
+            color: #ddd;
+        }
+        
+        .num:active {
+            background: #3a3a3a;
+        }
+        
+        .op {
+            background: linear-gradient(#4a3a2a, #3a2a1a);
+            color: var(--lux-gold);
+            font-size: 1.3rem;
+        }
+        
+        .func {
+            background: #1f2a1f;
+            color: #99dd99;
+        }
+        
+        .enter {
+            background: linear-gradient(#8b5a2b, #6b3a1b);
+            color: white;
+            grid-column: span 2;
+            font-size: 1.4rem;
+        }
+        
+        .special {
+            background: #2a1f1f;
+            color: #ffcc88;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 12px;
+            font-size: 0.7rem;
+            color: #666;
+            background: #111;
+        }
+        
+        .aviation-mode {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 28, 15, 0.95);
+            padding: 15px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator">
+        <!-- Header -->
+        <div class="header">
+            <div class="model">ASA CX-3</div>
+            <h1>FLIGHT COMPUTER</h1>
+        </div>
+        
+        <!-- Screen -->
+        <div class="screen-container">
+            <div class="screen">
+                <div class="status-bar">
+                    <span class="mode" id="current-mode">CALC</span>
+                    <span id="time">12:52</span>
+                </div>
+                <div class="display" id="main-display">0</div>
+                <div style="font-size: 0.9rem; color: #77aa77; text-align: right; margin-top: 8px;" id="secondary-display"></div>
+            </div>
+        </div>
+        
+        <!-- Keypad -->
+        <div class="keypad">
+            <!-- Row 1 -->
+            <button class="func" onclick="setMode('FLT')">FLT</button>
+            <button class="func" onclick="setMode('PLAN')">PLAN</button>
+            <button class="func" onclick="setMode('TIMER')">TIMER</button>
+            <button class="func" onclick="setMode('CALC')" style="background:#3a4a3a;">CALC</button>
+            
+            <!-- Row 2 -->
+            <button class="op" onclick="inputOp('+')">+</button>
+            <button class="num" onclick="inputNum('7')">7</button>
+            <button class="num" onclick="inputNum('8')">8</button>
+            <button class="num" onclick="inputNum('9')">9</button>
+            
+            <!-- Row 3 -->
+            <button class="op" onclick="inputOp('-')">-</button>
+            <button class="num" onclick="inputNum('4')">4</button>
+            <button class="num" onclick="inputNum('5')">5</button>
+            <button class="num" onclick="inputNum('6')">6</button>
+            
+            <!-- Row 4 -->
+            <button class="op" onclick="inputOp('*')">×</button>
+            <button class="num" onclick="inputNum('1')">1</button>
+            <button class="num" onclick="inputNum('2')">2</button>
+            <button class="num" onclick="inputNum('3')">3</button>
+            
+            <!-- Row 5 -->
+            <button class="op" onclick="inputOp('/')">÷</button>
+            <button class="num" onclick="inputNum('0')">0</button>
+            <button class="num" onclick="inputNum('.')">.</button>
+            <button class="special" onclick="backspace()">⌫</button>
+            
+            <!-- Row 6 -->
+            <button class="special" onclick="clearAll()">C</button>
+            <button class="enter" onclick="calculate()">=</button>
+            <button class="func" onclick="toggleAviation()">W/B</button>
+        </div>
+        
+        <div class="footer">
+            LUXURY EDITION • POWERED BY GROK
+        </div>
+    </div>
+
+    <script>
+        let display = document.getElementById('main-display');
+        let secondaryDisplay = document.getElementById('secondary-display');
+        let currentInput = '0';
+        let previousInput = '';
+        let operator = '';
+        let shouldResetDisplay = false;
+        let currentMode = 'CALC';
+        
+        function updateDisplay() {
+            display.textContent = currentInput;
+        }
+        
+        function inputNum(num) {
+            if (shouldResetDisplay) {
+                currentInput = '';
+                shouldResetDisplay = false;
+            }
+            if (currentInput === '0' && num !== '.') {
+                currentInput = num;
+            } else {
+                currentInput += num;
+            }
+            updateDisplay();
+        }
+        
+        function inputOp(op) {
+            if (operator !== '') {
+                calculate();
+            }
+            previousInput = currentInput;
+            operator = op;
+            shouldResetDisplay = true;
+        }
+        
+        function calculate() {
+            if (operator === '' || shouldResetDisplay) return;
+            
+            let result;
+            const prev = parseFloat(previousInput);
+            const curr = parseFloat(currentInput);
+            
+            switch(operator) {
+                case '+': result = prev + curr; break;
+                case '-': result = prev - curr; break;
+                case '*': result = prev * curr; break;
+                case '/': result = curr !== 0 ? prev / curr : 'Error'; break;
+            }
+            
+            currentInput = result.toString();
+            operator = '';
+            shouldResetDisplay = true;
+            updateDisplay();
+        }
+        
+        function clearAll() {
+            currentInput = '0';
+            previousInput = '';
+            operator = '';
+            updateDisplay();
+            secondaryDisplay.textContent = '';
+        }
+        
+        function backspace() {
+            if (currentInput.length <= 1) {
+                currentInput = '0';
+            } else {
+                currentInput = currentInput.slice(0, -1);
+            }
+            updateDisplay();
+        }
+        
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('current-mode').textContent = mode;
+            
+            if (mode === 'CALC') {
+                clearAll();
+            } else {
+                secondaryDisplay.textContent = `${mode} MODE ACTIVE`;
+                // Simple demo messages
+                setTimeout(() => {
+                    if (mode === 'FLT') secondaryDisplay.textContent = 'Ground Speed: 142 KTS';
+                    if (mode === 'PLAN') secondaryDisplay.textContent = 'Leg 1 ETA: 1h 23m';
+                    if (mode === 'TIMER') secondaryDisplay.textContent = '00:00:00';
+                }, 800);
+            }
+        }
+        
+        function toggleAviation() {
+            alert("Weight & Balance Mode\n\nCG: 87.4 inches\nTotal Weight: 2450 lbs\n\n(Luxury demo - full W&B calculator would require more complex JS)");
+        }
+        
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            let hours = now.getHours();
+            let minutes = now.getMinutes();
+            document.getElementById('time').textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+        }
+        
+        // Keyboard support
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+            if (e.key === '.') inputNum('.');
+            if (e.key === '+') inputOp('+');
+            if (e.key === '-') inputOp('-');
+            if (e.key === '*') inputOp('*');
+            if (e.key === '/') inputOp('/');
+            if (e.key === 'Enter' || e.key === '=') calculate();
+            if (e.key === 'Backspace') backspace();
+            if (e.key === 'Escape') clearAll();
+        });
+        
+        // Initialize
+        updateDisplay();
+        updateClock();
+        setInterval(updateClock, 30000);
+        
+        // Demo message
+        setTimeout(() => {
+            secondaryDisplay.textContent = 'Welcome to CX-3 Luxury Edition';
+        }, 1200);
+    </script>
+</body>
+</html>
